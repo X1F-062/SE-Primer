@@ -1,0 +1,1 @@
+{"name":"se-primer","private":true,"scripts":{"start":"npx http-server . -p 8080","cy:run":"cypress run","eval":"node eval.js"},"devDependencies":{"cypress":"^13.0.0","http-server":"^14.1.1"}}

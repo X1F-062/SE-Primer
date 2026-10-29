@@ -1,0 +1,74 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SE Primer</title><meta name="color-scheme" content="light dark">
+<style>
+:root{--bg:#F6F4EF;--card:#FFFEFA;--ink:#14213D;--acc:#C2571A;--gold:#E8A24A;--ok:#1F5FA8;--bad:#9C3B0E;--line:#D9D5CA}
+@media(prefers-color-scheme:dark){:root{--bg:#0E1626;--card:#16233D;--ink:#F3EFE6;--line:#2C3B5A;--ok:#7DB4F0;--bad:#F0A070}}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 Georgia,'Times New Roman',serif}
+#app{max-width:420px;margin:auto;padding:max(20px,env(safe-area-inset-top)) 18px max(20px,env(safe-area-inset-bottom))}
+h1{font-size:30px;margin:.2em 0}h2{font-size:21px}.tag{color:var(--acc);font-weight:700;font-size:13px;letter-spacing:.06em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+button{display:block;width:100%;min-height:48px;margin:8px 0;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;text-align:left}
+button.p{background:var(--acc);color:#fff;border:0;text-align:center;font-weight:700}
+button.on{border:2px solid var(--acc)}input{width:100%;min-height:44px;padding:8px;border-radius:10px;border:1px solid var(--line);font:inherit;background:var(--card);color:var(--ink)}
+.tutor{border-left:4px solid var(--gold)}.timer{color:var(--bad);font-weight:700}.endA{border-color:var(--ok)}.endB{border-color:var(--bad)}
+</style></head><body><div id="app"></div>
+<script>
+/*TUTOR*/
+const TUT=[
+{k:/şema|migration|veritaban|rollback|geri al|canlı|deneme|yama|bilinen|yeni sürüm/,q:'Geri dönmeden önce veritabanı şemasının değişip değişmediğini nasıl anlarsın?',f:'Bu varsayımı yanlış çıkarsa hastaların verisine ne olabilir?',d:'Şema, veritabanındaki tabloların ve alanların yapısıdır.'},
+{k:/test|smoke|regresyon|doğrula|yayın|acele|zaman|hız|staging/,q:'Yayına almadan önce hangi en küçük doğrulama sistemin çalıştığını kanıtlar?',f:'Bu seçimin maliyetini ve riskini kim taşır?',d:'Doğrulama, değişikliğin beklenen şekilde çalıştığını gösteren küçük bir kontroldür.'},
+{k:/kvkk|kişisel|hasta adı|log|gizlilik|anonim|maske|ekibe|gönder|tc/,q:'Log ekibe ulaştığında hasta adını kimler görmüş olur ve bunun hukuki sonucu ne olabilir?',f:'Bu verinin loga gerçekten gerekli olup olmadığını nasıl sorgularsın?',d:'KVKK, kişisel verinin işlenmesini düzenleyen 6698 sayılı kanundur.'}];
+const LEAK=/\b[AB]\)|eski sürüme geri|canlıda yama|önce kısa test|hemen yayına|maskele|olduğu gibi at|doğru cevap/i;
+function intent(m){if(!m)return'bos';
+if(/(ignore|önceki talimat|system prompt|sistem istemi|rol yap)/.test(m))return'inj';
+if(/(cevab|söyle|hangisi|doğru seç|şıkk|seçenek|a mı|b mi|ne yapmalıyım)/.test(m))return'cevap';
+if(/(ne demek|nedir|anlamı|tanım|açıkla)/.test(m))return'tanim';
+if(/(hava|film|maç|yemek|selam|merhaba|nasılsın)/.test(m))return'konu';return null}
+function rule(step,m){const T=TUT[step],i=intent(m);
+if(i==='bos')return'Henüz bir şey yazmadın. Bu kararın en büyük riskini tek cümleyle yazar mısın?';
+if(i==='inj')return'Kurallarımı değiştiremem; sahneye dönelim. '+T.q;
+if(i==='cevap')return'Cevabı vermem; düşünmene eşlik ederim. '+T.q;
+if(i==='tanim')return T.d+' Şimdi sen: '+T.q;
+if(i==='konu')return'Şimdilik sahnedeyiz. '+T.q;
+if(T.k.test(m))return'Bunu biraz açar mısın? '+T.f;
+return'Hangi riski görüyorsun? '+T.q}
+function guard(out,step,m){return LEAK.test(out)?rule(step,m):out}
+function tutor(step,msg){return rule(step,(msg||'').toLowerCase().trim())}
+/*END*/
+const S=[
+{t:'KARAR 1 · MİMARİ',q:'Dün gece yeni sürüm çıktı. 300 hasta bekliyor. Ne yaparsın?',h:'hangisi "bilinen iyi" duruma daha yakın?',
+o:[['Eski sürüme geri dön','08:10 sistem ayağa kalktı. Neden: önceki sürüm kanıtlanmıştı ve şema değişmediği için veri uyumluydu.'],['Canlıda yama yap','Yama 20 dk sürdü, yeni hata çıktı. Neden: canlıda denenmemiş değişiklik riski büyütür.']]},
+{t:'KARAR 2 · TEST',q:'Düzeltme hazır. Yayına nasıl alırsın?',h:'yanlış yayının bedelini kim öder?',
+o:[['Önce kısa test koş','2 dk sürdü, bir uyumsuzluk yakalandı. Neden: hata hastaya ulaşmadan bulundu.'],['Hemen yayına al','Yayın hızlıydı ama bir ekran bozuk çıktı. Neden: doğrulama yoktu.']]},
+{t:'KARAR 3 · KVKK',q:'Logda hasta adı var. Ekibe nasıl iletirsin?',h:'6698 sayılı KVKK kişisel veriye ne der?',
+o:[['Maskele','Ad ve TC maskelendi. Neden: kişisel veri gereksiz yere dolaşıma girmedi.'],['Ekibe olduğu gibi at','Log 12 kişiye gitti. Neden: gerekli olmayan kişisel veri paylaşıldı, KVKK ihlali.']]}];
+let st={scr:'intro',lv:null,role:null,goal:null,i:0,ch:[],res:null,t:60,tm:null};
+const $=h=>{document.getElementById('app').innerHTML=h};
+const sel=(k,v)=>{st[k]=v;draw()};
+function opt(k,l,v){return `<button data-testid="${k}-${v}" class="${st[k]===v?'on':''}" onclick="sel('${k}','${v}')">${l}</button>`}
+function ending(){const [a,b,c]=st.ch;return(c==='B'||(a==='B'&&b==='B'))?'B':'A'}
+function draw(){clearInterval(st.tm);
+if(st.scr==='intro'){const ok=st.lv&&st.role&&st.goal;
+$(`<div class=tag>YZM301 · SE PRIMER</div><h1>08:00, sistem çöktü.</h1><p>Üç soru: hikâye sana uyum sağlasın.</p>
+<h2>Seviye</h2>${opt('lv','Yeni başladım','yeni')}${opt('lv','Deneyimliyim','deneyimli')}
+<h2>Rol</h2>${opt('role','Geliştirici','dev')}${opt('role','Test mühendisi','qa')}${opt('role','DevOps','ops')}
+<h2>Hedef</h2>${opt('goal','Hızlı pratik','hizli')}${opt('goal','Derin öğrenme','derin')}
+<button class=p data-testid="start" ${ok?'':'disabled'} onclick="st.scr='scene';st.i=0;st.ch=[];st.res=null;draw()">Nöbete başla</button>`);return}
+if(st.scr==='scene'){const s=S[st.i];
+if(st.res){$(`<div class=tag>${s.t}</div><div class=card data-testid="result"><b>Ne oldu, neden oldu</b><p>${st.res}</p></div>
+<button class=p data-testid="next" onclick="st.res=null;st.i++;if(st.i>=3)st.scr='end';draw()">Devam</button>`);return}
+const timer=st.lv==='deneyimli'?`<div class=timer data-testid="timer">Süre: <span id=sec>${st.t}</span> sn</div>`:'';
+const hint=st.lv==='yeni'?`<div class=card data-testid="hint">İpucu: ${s.h}</div>`:'';
+$(`<div class=tag>${s.t} · ${st.role} · ${st.goal}</div>${timer}<h2>${s.q}</h2>${hint}
+${s.o.map((o,j)=>`<button data-testid="choice-${'AB'[j]}" onclick="pick('${'AB'[j]}')">${'AB'[j]}) ${o[0]}</button>`).join('')}
+<div class="card tutor"><b>AI tutor</b> — cevabı söylemez, sorar.<input data-testid="tutor-input" id=ti placeholder="Düşüncen..."><button data-testid="tutor-send" onclick="ask()">Tutor'a sor</button><div data-testid="tutor-reply" id=tr></div></div>`);
+if(st.lv==='deneyimli'){st.t=60;st.tm=setInterval(()=>{st.t--;const e=document.getElementById('sec');if(e)e.textContent=st.t;if(st.t<=0){clearInterval(st.tm);pick('B')}},1000)}return}
+const e=ending(),A=e==='A';
+$(`<div class="card ${A?'endA':'endB'}" data-testid="ending-${e}"><div class=tag>${A?'SON A · İYİ':'SON B · KÖTÜ'}</div>
+<h2>${A?'08:25 sistem ayakta, veri güvende':'Sistem ayakta ama KVKK ihlali'}</h2><p>Seçimlerin: ${st.ch.join(' → ')}</p></div>
+<button class=p data-testid="restart" onclick="st.scr='intro';draw()">Yeniden oyna</button>`)}
+function pick(c){clearInterval(st.tm);st.ch[st.i]=c;st.res=S[st.i].o['AB'.indexOf(c)][1];draw()}
+async function ask(){const v=document.getElementById('ti').value;let o=tutor(st.i,v);if(window.llmTutor){try{o=guard(await window.llmTutor(st.i,v),st.i,v.toLowerCase())}catch(e){}}document.getElementById('tr').textContent=o}
+draw();
+</script><script src="tutor-llm.js" onerror="0"></script></body></html>
